@@ -1,0 +1,67 @@
+
+---
+ title: "Trying SPiCT with white anglerfish"
+ author: "Agurtzane Urtizberea"
+ date: "2020"
+ output: html_document
+---
+
+Three surveys are considered in the assessment of white anglerfish:
+
+ FR_IE_IBTS survey: the combined index of the French EVHOE survey and the Irish IBTS survey. Both are conducted between the third and forth quarter.EVHOE survey is conducted in the Bay of Biscay and the Irish IBTS in the Celtic Sea.
+
+ The Spanish survey in the Porcupine Bank began in 2001 and covers ICES Divisions VIIb-k corresponding to the Porcupine Bank and adjacent area in western Irish waters. The survey takes place in the third quarter (September) and covers depths between 170 and 800 m. 
+
+ Monkfish survey is in the beginning of the year, but is considered the end of the previous year and it's conducted in the Celtic Sea.
+
+```{r include=TRUE}
+
+library(spict)
+
+
+data.ang <- read.csv("data_Spict.csv")
+summary(data.ang)
+
+data.ang$Year <- as.numeric(data.ang$Year)
+data.ang$timeEv <- ifelse(data.ang$Year>=2003 & data.ang$Year!= 2017,data.ang$Year+(0.75+1)/2,NA)
+data.ang$timePP <- ifelse(data.ang$Year>=2001,data.ang$Year+(0.75+1)/2,NA)
+data.ang$timeMon <- ifelse(data.ang$Year %in% c(2005,2006,2015:2019),data.ang$Year+1/12*11.5,NA)
+data.ang$timeMon2 <- ifelse(data.ang$Year >= 2015, data.ang$Year+1/12*11.5,NA)
+
+attach(data.ang)
+
+
+
+dtc=1
+dteuler=1/16
+inp.ang <- list(obsC=Total_Catch,timeC=Year,
+                obsI=list(LPUE_Vigo,FR.IE.IBTS,SPPGFS,MON2),
+                timeI=list(Year,timeEv,timePP,timeMon2),
+                dtc=dtc,dteuler=dteuler)
+inp.ang$phases$logbeta <- 1
+inp.ang$phases$logalpha <- 1
+inp <- check.inp(inp.ang)
+#' Plot the input data
+plotspict.data(inp, qlegend = TRUE)
+
+res <- fit.spict(inp)
+summary(res)
+res<- calc.osa.resid(res)
+
+plot(res)
+#plotspict.osar(rep)
+
+#' Everything seems fine
+# Plot the residual diagnostics
+plotspict.diagnostic(res)
+#' Everything seems fine
+
+# Check the sensitivity to initial parameter values
+sens.ini <- check.ini(res, ntrials = 5)
+
+# Make a retrospective analysis and plot the results
+res$inp$getReportCovariance = FALSE
+res <- retro(res, nretroyear = 4)
+plotspict.retro(res)
+
+```

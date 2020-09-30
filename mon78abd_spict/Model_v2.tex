@@ -1,0 +1,290 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+
+\addtolength{\headheight}{1.0cm} 
+\pagestyle{fancyplain}
+
+\renewcommand{\headrulewidth}{0pt}
+
+\hypertarget{aim}{%
+\section{AIM}\label{aim}}
+
+The aim is to try spict as assessment model for Northern White
+Anglerfish in Division 7a-k and compare the results with the outputs of
+the actual assessment model a4a. The a4a model get information from
+three surveys:
+
+FR\_IE\_IBTS survey: the joint index of the French EVHOE survey and the
+Irish IBTS survey. Both are conducted between the third and forth
+quarter.The French EVHOE survey is conducted in the Bay of Biscay and
+the Irish IBTS in the Celtic Sea.
+
+The Spanish survey in the Porcupine Bank began in 2001 and covers ICES
+Divisions VIIb-k corresponding to the Porcupine Bank and adjacent area
+in western Irish waters. The survey takes place in the third quarter
+(September) and covers depths between 170 and 800 m.
+
+Monkfish survey is in the beginning of the year, but is considered the
+end of the previous year and it's conducted in the Celtic Sea.
+
+In addition of the three surveys,here we also include the standarized
+LPUE from the trawlers of Vigo.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(devtools)}
+\KeywordTok{install_github}\NormalTok{(}\StringTok{"DTUAqua/spict/spict"}\NormalTok{) }
+\end{Highlighting}
+\end{Shaded}
+
+Load all necessary packages.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(spict)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{input-data}{%
+\section{Input data}\label{input-data}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{data.ang <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"data_Spict.csv"}\NormalTok{)}
+\KeywordTok{summary}\NormalTok{(data.ang)}
+
+\NormalTok{data.ang}\OperatorTok{$}\NormalTok{Year <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(data.ang}\OperatorTok{$}\NormalTok{Year)}
+\NormalTok{data.ang}\OperatorTok{$}\NormalTok{timeEv <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{>=}\DecValTok{2003} \OperatorTok{&}\StringTok{ }\NormalTok{data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{!=}\StringTok{ }\DecValTok{2017}\NormalTok{,data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{+}\NormalTok{(}\FloatTok{0.75}\OperatorTok{+}\DecValTok{1}\NormalTok{)}\OperatorTok{/}\DecValTok{2}\NormalTok{,}\OtherTok{NA}\NormalTok{)}
+\NormalTok{data.ang}\OperatorTok{$}\NormalTok{timePP <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{>=}\DecValTok{2001}\NormalTok{,data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{+}\NormalTok{(}\FloatTok{0.75}\OperatorTok{+}\DecValTok{1}\NormalTok{)}\OperatorTok{/}\DecValTok{2}\NormalTok{,}\OtherTok{NA}\NormalTok{)}
+\NormalTok{data.ang}\OperatorTok{$}\NormalTok{timeMon <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(data.ang}\OperatorTok{$}\NormalTok{Year }\OperatorTok{%in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{2005}\NormalTok{,}\DecValTok{2006}\NormalTok{,}\DecValTok{2015}\OperatorTok{:}\DecValTok{2019}\NormalTok{),data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{+}\DecValTok{1}\OperatorTok{/}\DecValTok{12}\OperatorTok{*}\FloatTok{11.5}\NormalTok{,}\OtherTok{NA}\NormalTok{)}
+\NormalTok{data.ang}\OperatorTok{$}\NormalTok{timeMon2 <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(data.ang}\OperatorTok{$}\NormalTok{Year }\OperatorTok{>=}\StringTok{ }\DecValTok{2015}\NormalTok{, data.ang}\OperatorTok{$}\NormalTok{Year}\OperatorTok{+}\DecValTok{1}\OperatorTok{/}\DecValTok{12}\OperatorTok{*}\FloatTok{11.5}\NormalTok{,}\OtherTok{NA}\NormalTok{)}
+
+\KeywordTok{attach}\NormalTok{(data.ang)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dtc=}\DecValTok{1}
+\NormalTok{dteuler=}\DecValTok{1}\OperatorTok{/}\DecValTok{16}
+\NormalTok{inp.ang <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}\DataTypeTok{obsC=}\NormalTok{Total_Catch,}\DataTypeTok{timeC=}\NormalTok{Year,}
+                \DataTypeTok{obsI=}\KeywordTok{list}\NormalTok{(LPUE_Vigo, SPPGFS,MON2),}
+                \DataTypeTok{timeI=}\KeywordTok{list}\NormalTok{(Year,timePP,timeMon2),}
+                \DataTypeTok{dtc=}\NormalTok{dtc,}\DataTypeTok{dteuler=}\NormalTok{dteuler)}
+\NormalTok{inp.ang}\OperatorTok{$}\NormalTok{phases}\OperatorTok{$}\NormalTok{logbeta <-}\StringTok{ }\DecValTok{1}
+\NormalTok{inp.ang}\OperatorTok{$}\NormalTok{phases}\OperatorTok{$}\NormalTok{logalpha <-}\StringTok{ }\DecValTok{1}
+\NormalTok{inp <-}\StringTok{ }\KeywordTok{check.inp}\NormalTok{(inp.ang)}
+\CommentTok{#' Plot the input data}
+\KeywordTok{plotspict.data}\NormalTok{(inp, }\DataTypeTok{qlegend =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{res <-}\StringTok{ }\KeywordTok{fit.spict}\NormalTok{(inp)}
+\KeywordTok{summary}\NormalTok{(res)}
+\NormalTok{res<-}\StringTok{ }\KeywordTok{calc.osa.resid}\NormalTok{(res)}
+
+\KeywordTok{plot}\NormalTok{(res)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#plotspict.osar(rep)}
+
+
+\CommentTok{# Plot the residual diagnostics}
+\KeywordTok{plotspict.diagnostic}\NormalTok{(res)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Check the sensitivity to initial parameter values}
+\NormalTok{sens.ini <-}\StringTok{ }\KeywordTok{check.ini}\NormalTok{(res, }\DataTypeTok{ntrials =} \DecValTok{5}\NormalTok{)}
+
+\CommentTok{# Make a retrospective analysis and plot the results}
+\NormalTok{res}\OperatorTok{$}\NormalTok{inp}\OperatorTok{$}\NormalTok{getReportCovariance =}\StringTok{ }\OtherTok{FALSE}
+\NormalTok{res <-}\StringTok{ }\KeywordTok{retro}\NormalTok{(res, }\DataTypeTok{nretroyear =} \DecValTok{4}\NormalTok{)}
+\KeywordTok{plotspict.retro}\NormalTok{(res)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-4.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Plot the relative biomass and fishing mortality}
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{1}\NormalTok{), }\DataTypeTok{mar =} \KeywordTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+\KeywordTok{plotspict.bbmsy}\NormalTok{(res, }\DataTypeTok{qlegend =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{stamp =} \StringTok{""}\NormalTok{)}
+\KeywordTok{plotspict.ffmsy}\NormalTok{(res, }\DataTypeTok{qlegend =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{stamp =} \StringTok{""}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-5.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Check if there are changes in the results if the grid is finer, i.e.}
+\CommentTok{# dteuler is smaller than 1/16 year.}
+\NormalTok{inp.dteuler1_}\DecValTok{32}\NormalTok{ <-}\StringTok{ }\NormalTok{inp.ang}
+\NormalTok{inp.dteuler1_}\DecValTok{32}\OperatorTok{$}\NormalTok{dteuler <-}\StringTok{ }\DecValTok{1}\OperatorTok{/}\DecValTok{32}
+\NormalTok{inp.dteuler1_}\DecValTok{32}\NormalTok{ <-}\StringTok{ }\KeywordTok{check.inp}\NormalTok{(inp.dteuler1_}\DecValTok{32}\NormalTok{)}
+
+\NormalTok{fit.dteuler1_}\DecValTok{32}\NormalTok{ <-}\StringTok{ }\KeywordTok{fit.spict}\NormalTok{(inp.dteuler1_}\DecValTok{32}\NormalTok{)}
+
+\CommentTok{## Fit the discrete time model}
+\NormalTok{inp.dteuler1 <-}\StringTok{ }\NormalTok{inp.ang}
+\NormalTok{inp.dteuler1}\OperatorTok{$}\NormalTok{dteuler <-}\StringTok{ }\DecValTok{1}
+\NormalTok{inp.dteuler1 <-}\StringTok{ }\KeywordTok{check.inp}\NormalTok{(inp.dteuler1)}
+
+\NormalTok{fit.dteuler1 <-}\StringTok{ }\KeywordTok{fit.spict}\NormalTok{(inp.dteuler1)}
+
+\CommentTok{# Checked the fixed effects estimates}
+\NormalTok{(par <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(res}\OperatorTok{$}\NormalTok{par.fixed))}
+\NormalTok{(par1 <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(fit.dteuler1}\OperatorTok{$}\NormalTok{par.fixed))}
+\NormalTok{(par1_}\DecValTok{32}\NormalTok{ <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(fit.dteuler1_}\DecValTok{32}\OperatorTok{$}\NormalTok{par.fixed))}
+
+\CommentTok{# Plot the percent change compared to the default run}
+\NormalTok{dif1_}\DecValTok{32}\NormalTok{ <-}\StringTok{ }\NormalTok{(par }\OperatorTok{-}\StringTok{ }\NormalTok{par1_}\DecValTok{32}\NormalTok{) }\OperatorTok{/}\StringTok{ }\NormalTok{par }\OperatorTok{*}\StringTok{ }\DecValTok{100}
+\NormalTok{dif1 <-}\StringTok{ }\NormalTok{(par }\OperatorTok{-}\StringTok{ }\NormalTok{par1) }\OperatorTok{/}\StringTok{ }\NormalTok{par }\OperatorTok{*}\StringTok{ }\DecValTok{100}
+\KeywordTok{plot}\NormalTok{(dif1, }\DataTypeTok{ylab =} \StringTok{"Percent difference"}\NormalTok{, }\DataTypeTok{xlab =} \StringTok{""}\NormalTok{, }\DataTypeTok{axes =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{ylim =} \KeywordTok{c}\NormalTok{(}\OperatorTok{-}\DecValTok{40}\NormalTok{,}\DecValTok{40}\NormalTok{))}
+\KeywordTok{points}\NormalTok{(dif1_}\DecValTok{32}\NormalTok{, }\DataTypeTok{pch =} \DecValTok{3}\NormalTok{)}
+\KeywordTok{abline}\NormalTok{(}\DataTypeTok{h=}\DecValTok{0}\NormalTok{, }\DataTypeTok{col =} \StringTok{"#00000044"}\NormalTok{)}
+\KeywordTok{axis}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{at=}\KeywordTok{seq}\NormalTok{(par), }\DataTypeTok{labels =} \KeywordTok{gsub}\NormalTok{(}\StringTok{"log"}\NormalTok{, }\StringTok{""}\NormalTok{, }\KeywordTok{names}\NormalTok{(par)))}
+\KeywordTok{axis}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DataTypeTok{at =} \KeywordTok{seq}\NormalTok{(}\OperatorTok{-}\DecValTok{30}\NormalTok{, }\DecValTok{30}\NormalTok{, }\DecValTok{20}\NormalTok{))}
+\KeywordTok{legend}\NormalTok{(}\StringTok{"topleft"}\NormalTok{, }\DataTypeTok{legend =} \KeywordTok{c}\NormalTok{(}\StringTok{"Discrete"}\NormalTok{, }\StringTok{"Finer grid"}\NormalTok{), }\DataTypeTok{pch =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+
+\CommentTok{# Plot the results using the two dteuler together}
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-6.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plotspict.bbmsy}\NormalTok{(res, }\DataTypeTok{qlegend =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{main =} \StringTok{""}\NormalTok{)}
+\KeywordTok{title}\NormalTok{(}\StringTok{"Default: dteuler = 1/16 year"}\NormalTok{)}
+\KeywordTok{plotspict.bbmsy}\NormalTok{(fit.dteuler1_}\DecValTok{32}\NormalTok{, }\DataTypeTok{qlegend =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{main =} \StringTok{""}\NormalTok{)}
+\KeywordTok{title}\NormalTok{(}\StringTok{"Finer grid: dteuler = 1/32 year"}\NormalTok{)}
+\KeywordTok{plotspict.bbmsy}\NormalTok{(fit.dteuler1, }\DataTypeTok{qlegend =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{main =} \StringTok{""}\NormalTok{)}
+\KeywordTok{title}\NormalTok{(}\StringTok{"Discrete time: dteuler = 1 year"}\NormalTok{)}
+\KeywordTok{plotspict.ffmsy}\NormalTok{(res)}
+\KeywordTok{plotspict.ffmsy}\NormalTok{(fit.dteuler1_}\DecValTok{32}\NormalTok{)}
+\KeywordTok{plotspict.ffmsy}\NormalTok{(fit.dteuler1)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Model_v2_files/figure-latex/unnamed-chunk-3-7.pdf}
+
+\end{document}
