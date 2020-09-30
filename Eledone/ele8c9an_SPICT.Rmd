@@ -54,7 +54,7 @@ ele8c9aNC <- data.frame(obsC = c(1182,821,682,780,984,572,232,229,676,173,650,41
 ele8c9aND <- data.frame(obsD = c(2.12,3.14,2.56,1.6,3.06,2.94,2.98,2.42,0.76,1.6,1.68,0.84,1.52,4.02,2.44,2.18,2.62,3,1.58,2.24),timeD = c(2000:2019)+0.75)
 
 # Index data: Commercial index bottom trawlers (tonnes/fishing sequence)
-ele8c9aNI <- data.frame(obsI = c(2.005,14.08,15.082,16.518,18.882,7.984,15.57,5.455,3.8,5.411,1.851),timeI = 2009:2019)
+ele8c9aNI <- data.frame(obsI = c(2.005,14.08,15.082,16.518,18.882,7.984,15.57,5.455,3.8,5.411,1.851),timeI = c(2009:2019)+0.5)
 
 # Create a list for input data
 
@@ -118,42 +118,14 @@ res_ele8c9aNSchaefer
 
 - Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
 
-```{r Figure3, message=FALSE, warning=FALSE, paged.print=TRUE}
+No converged.
+```{r results='hide', message=FALSE, warning=FALSE, paged.print=TRUE}
 ele8c9aNBkfrac <- ele8c9aN
 ele8c9aNBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
 
 res_ele8c9aNBkfrac <- fit.spict(ele8c9aNBkfrac)
 res_ele8c9aNBkfrac
 
-# Summary of estimates
-round(sumspict.parest(res_ele8c9aNBkfrac),2)
-
-# Reference points
-sumspict.drefpoints(res_ele8c9aNBkfrac) 
-
-# Basic plotting of the results 
-plot(res_ele8c9aNBkfrac)
-
-# Convergence checks
-
-# Convergence
-res_ele8c9aNBkfrac$opt$convergence 
-
-# All the sd were estimated
-all(is.finite(res_ele8c9aNBkfrac$sd))
-
-# No violation of assumptions: bias, correlation and normality:
-res_ele8c9aNBkfrac <- calc.osa.resid(res_ele8c9aNBkfrac)
-plotspict.diagnostic(res_ele8c9aNBkfrac)
-
-# Retrospective: no trends and all runs inside the confidence intervals:
-```
-
-Problems of convergence.
-
-```{r message=FALSE, warning=FALSE}
-rep<-retro(res_ele8c9aNBkfrac, nretroyear=5)
-#plotspict.retro(rep)
 ```
 
 #### Run 4:
@@ -164,14 +136,17 @@ rep<-retro(res_ele8c9aNBkfrac, nretroyear=5)
 
 ```{r message=FALSE, warning=FALSE}
 ele8c9aNSchaefBkfrac <- ele8c9aN
+
 # Set priors for B/K
 ele8c9aNSchaefBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+
 # Fixing n at 2
 ele8c9aNSchaefBkfrac$ini$logn <- log(2)
 ele8c9aNSchaefBkfrac$phases$logn <- -1
 
 # Fit the model
 res_ele8c9aNSchaefBkfrac <- fit.spict(ele8c9aNSchaefBkfrac)
+
 # Results 
 res_ele8c9aNSchaefBkfrac
 
