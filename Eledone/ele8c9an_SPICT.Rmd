@@ -1,0 +1,200 @@
+---
+title: "Eledone cirrhosa in ICES divisions 8c9aN"
+author: "Esther Abad/Julio Valeiras"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=80), tidy=TRUE)
+```
+
+## Background information
+
+
+The horned octopus, Eledone cirrhosa, is a common demersal species in soft-bottom fishing grounds in north Iberian peninsula. 
+It is mostly caught in bottom trawlers as a secondary species. Its commercial importance is significant although is it is also one of the most commonly discard species by trawlers in the area. 
+There is not a defined stock unit either a management advise by ICES. In this exercise we choose the same ICES divisions (8c9a) of other assessed stocks in the area that are caught by the same fleets.
+
+
+## Available data 
+
+1. Annual commercial landings (in tonnes) div 8c9aN: 2000-2019. 
+2. Abundance Index  "Spanish groundfish Research Survey, operating in div 8c9aN, September/October" (kg/hauls): 2000-2019.
+3. Abundance Index  "Coruna (Spanish fishing port) bottom trawlers > 55 mm, operating in div 8c" (tonnes/fishing sequence): 2009-2019.
+
+## Fitting SPICT model
+
+### Starting session and download libraries 
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Package from github:
+  #devtools::install_github("mawp/spict/spict")
+  #library(remotes)
+  #install_github("DTUAqua/spict/spict") 
+
+rm(list=ls(all=TRUE))
+
+# Download libraries
+library(spict)
+library(icesAdvice)
+library(ellipse)
+library(formatR)
+```
+
+### Creating data object
+
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Catch data: Only Commercial Landings. (No discards)
+
+ele8c9aNC <- data.frame(obsC = c(1182,821,682,780,984,572,232,229,676,173,650,414,466,682,378,417,244,255,213,140),timeC = 2000:2019)
+
+# Index data: Demersales Research Survey (kg/fishing hauls)
+ele8c9aND <- data.frame(obsD = c(2.12,3.14,2.56,1.6,3.06,2.94,2.98,2.42,0.76,1.6,1.68,0.84,1.52,4.02,2.44,2.18,2.62,3,1.58,2.24),timeD = c(2000:2019)+0.75)
+
+# Index data: Commercial index bottom trawlers (tonnes/fishing sequence)
+ele8c9aNI <- data.frame(obsI = c(2.005,14.08,15.082,16.518,18.882,7.984,15.57,5.455,3.8,5.411,1.851),timeI = c(2009:2019)+0.5)
+
+# Create a list for input data
+
+ele8c9aN <- list(timeC = ele8c9aNC$timeC, obsC = ele8c9aNC$obsC)
+ele8c9aN$timeI <- list(ele8c9aND$timeD, ele8c9aNI$timeI)
+ele8c9aN$obsI <- list()
+ele8c9aN$obsI[[1]] <- ele8c9aND$obsD/1000 # Index 1
+ele8c9aN$obsI[[2]] <- ele8c9aNI$obsI # Index 2
+
+# Check list 
+ele8c9aN = check.inp(ele8c9aN)
+```
+
+Plot Raw data:
+
+```{r Figure1, message=FALSE, warning=FALSE, fig.cap = "Raw data ", fig.align = "center"}
+plotspict.data(ele8c9aN)
+```
+
+To highlight:
+
+- Catch and commercial abundance series (Index 2) are overlapped only for a short period of time (10 years).
+
+
+Plot Fitting linear regression:
+```{r Figure2, message=FALSE, warning=FALSE, fig.cap = "Fitting linear regression", fig.align = "center"}
+plotspict.ci(ele8c9aN)
+```
+
+
+### Model Fitting 
+
+#### Run 1. 
+
+- Default priors and all parameters estimated
+
+ No converged. 
+```{r results='hide', message=FALSE, warning=FALSE}
+res_ele8c9aNDefault <- fit.spict(ele8c9aN)
+
+#plot(res_ele8c9aNDefault)
+```
+
+#### Run 2. 
+
+- Fixing n to resemble the Schaefer production model
+
+No converged.
+```{r results='hide', message=FALSE, warning=FALSE}
+
+ele8c9aNSchaefer <- ele8c9aN
+ele8c9aNSchaefer$ini$logn <- log(2)
+ele8c9aNSchaefer$phases$logn <- -1
+
+res_ele8c9aNSchaefer <- fit.spict(ele8c9aNSchaefer)
+res_ele8c9aNSchaefer 
+
+```
+
+#### Run 3. 
+
+- Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
+
+No converged.
+```{r results='hide', message=FALSE, warning=FALSE, paged.print=TRUE}
+ele8c9aNBkfrac <- ele8c9aN
+ele8c9aNBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+
+res_ele8c9aNBkfrac <- fit.spict(ele8c9aNBkfrac)
+res_ele8c9aNBkfrac
+
+```
+
+#### Run 4:
+
+- Fix parameter to Schaefer production curve (initial parameter). Symmetric productive curve (BMSY/K=0.5) 
+
+- Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
+
+```{r message=FALSE, warning=FALSE}
+ele8c9aNSchaefBkfrac <- ele8c9aN
+
+# Set priors for B/K
+ele8c9aNSchaefBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+
+# Fixing n at 2
+ele8c9aNSchaefBkfrac$ini$logn <- log(2)
+ele8c9aNSchaefBkfrac$phases$logn <- -1
+
+# Fit the model
+res_ele8c9aNSchaefBkfrac <- fit.spict(ele8c9aNSchaefBkfrac)
+
+# Results 
+res_ele8c9aNSchaefBkfrac
+
+# Summary of estimates
+round(sumspict.parest(res_ele8c9aNSchaefBkfrac),2)
+
+# Reference points
+sumspict.drefpoints(res_ele8c9aNSchaefBkfrac) 
+
+# Basic plotting of the results 
+plot(res_ele8c9aNSchaefBkfrac)
+
+# Convergence checks
+
+# Convergence
+res_ele8c9aNSchaefBkfrac$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_ele8c9aNSchaefBkfrac$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_ele8c9aNSchaefBkfrac <- calc.osa.resid(res_ele8c9aNSchaefBkfrac)
+plotspict.diagnostic(res_ele8c9aNSchaefBkfrac)
+
+# Retrospective: no trends and all runs inside the confidence intervals
+```
+
+All runs converged.
+
+```{r message=FALSE, warning=FALSE}
+rep <- retro(res_ele8c9aNSchaefBkfrac, nretroyear=5)
+plotspict.retro(rep)
+
+# Checking robustness to initial parameter values
+```
+
+Not all runs converged. 
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+check.ini(ele8c9aNSchaefBkfrac, ntrials=30)
+```
+
+# Questions/doubts
+
+Run 4 converged but the model is sensitive to initial values and the confidence intervals are quite wide.
+
+This is not a target species and the commercial effort is not focused on it. Also, abundance index from research survey can show not only the exploitable biomass. 
+
+
+

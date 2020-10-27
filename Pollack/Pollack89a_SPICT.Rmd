@@ -1,0 +1,219 @@
+---
+title: "Pollack in ICES Divisions 89a"
+author: "Paz Sampedro"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=80), tidy=TRUE)
+```
+
+## Background information
+
+Pollack.27.89a is a stock in ICES Category 5. Currently, the management advice is based on commercial landings. 
+
+Pollack is a bentopelagic species. Main commercial fleets included gillnetters and longliners from France (80% landings) and gillnetters and longliners from Spain (17% landings). Recreational landings are supposed to be high (at the same level as commercial landings, they have been estimated. 
+
+## Available data 
+1. Annual commercial landings (in tonnes): 1986-2018. 
+2. Abundance Index  "France gillneters mesh > 90 mm, operating in div 8a, 2nd semester" (tonnes/fishing sequence): 2005-2018.
+
+## Fitting SPICT model
+
+### Starting session and download libraries 
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Package from github:
+  #devtools::install_github("mawp/spict/spict")
+  #library(remotes)
+  #install_github("DTUAqua/spict/spict") 
+
+rm(list=ls(all=TRUE))
+
+# Download libraries
+library(spict)
+library(icesAdvice)
+library(ellipse)
+library(formatR)
+```
+
+### Creating data object
+
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Catch data: Only Commercial Landings. *Year 1999: mean of 1998 and 2000 as French landings were missing
+
+pol89aC <- data.frame(obsC = c(2806,2918,2582,1973,1900,2168,1958,1513,1955,1679,1354,1378,1165,1322,1479,1746,1972,1663,1726,1986,2126,1847,2313,1812,1682,2032,1520,1811,1959,1610,1661,1481,1512),timeC = 1986:2018)
+
+# Index data: Commercial index FR-GNS>90mm-8a-2s (tonnes/fishing sequence)
+pol89aI <- data.frame(obsI = c(0.1151,0.0663,0.1292,0.1289,0.1244,0.1079,0.1966,0.1743,0.1565,0.1500,0.1438,0.1205,0.1222,0.1117),timeI = c(2005:2018)+0.5)
+
+# Create a list for input data
+pol89a <- list(timeC = pol89aC$timeC, obsC = pol89aC$obsC,timeI = list(pol89aI$timeI),obsI = list(pol89aI$obsI))
+
+# Check list 
+pol89a <- check.inp(pol89a)
+```
+
+Plot Raw data:
+
+```{r Figure1, message=FALSE, warning=FALSE, fig.cap = "Raw data ", fig.align = "center"}
+plotspict.data(pol89a)
+```
+
+To highlight:
+
+- Catch and abundance series are overlapped only for a short period of time (14 years).
+
+- There is not contrast in catch series during 2005-2018.
+
+
+Plot Fitting linear regression:
+```{r Figure2, message=FALSE, warning=FALSE, fig.cap = "Fitting linear regression", fig.align = "center"}
+plotspict.ci(pol89a)
+```
+
+
+### Model Fitting 
+
+#### Run 1. Default priors and all parameters estimated
+ Not converged. Model did not obtain proper convergence!
+
+```{r results='hide', message=FALSE, warning=FALSE}
+res_pol89aDefault <- fit.spict(pol89a)
+```
+
+#### Run 2. Shorten Catch series to 2005-2018, overlapping with abundance index.
+
+Not converged. Shorten series gave totally unrealistic estimates, testing different configurations:
+
+```{r results='hide', message=FALSE, warning=FALSE}
+pol89aShorten = shorten.inp(pol89a, 2005, 2018)
+res_pol89aShorten <- fit.spict(pol89aShorten)
+```
+#### Run 3. Fix parameter to Schaefer production curve (initial parameter). Symmetric productive curve (BMSY/K=0.5)
+
+No converged:
+```{r message=FALSE, warning=FALSE}
+pol89aSchaefer <- pol89a
+pol89aSchaefer$ini$logn <- log(2)
+pol89aSchaefer$phases$logn <- -1
+res_pol89aSchaefer <- fit.spict(pol89aSchaefer)
+res_pol89aSchaefer 
+```
+
+#### Run 4. Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
+
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+pol89aBkfrac <- pol89a
+pol89aBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+res_pol89aBkfrac <- fit.spict(pol89aBkfrac)
+res_pol89aBkfrac
+
+# Summary of estimates
+round(sumspict.parest(res_pol89aBkfrac),2)
+
+# Reference points
+sumspict.drefpoints(res_pol89aBkfrac) 
+
+# Basic plotting of the results 
+plot(res_pol89aBkfrac)
+
+# Convergence checks
+
+# Convergence
+res_pol89aBkfrac$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_pol89aBkfrac$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_pol89aBkfrac <- calc.osa.resid(res_pol89aBkfrac)
+plotspict.diagnostic(res_pol89aBkfrac)
+```
+
+#### Retrospective: no trends and all runs inside the confidence intervals
+
+Problems of convergence:
+
+```{r message=FALSE, warning=FALSE}
+rep<-retro(res_pol89aBkfrac, nretroyear=5)
+
+```
+
+#### Run 5:
+
+- Fix parameter to Schaefer production curve (initial parameter). Symmetric productive curve (BMSY/K=0.5) 
+
+- Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
+
+```{r message=FALSE, warning=FALSE}
+pol89aSchaefBkfrac <- pol89a
+# Set priors for B/K
+pol89aSchaefBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+# Fixing n at 2
+pol89aSchaefBkfrac$ini$logn <- log(2)
+pol89aSchaefBkfrac$phases$logn <- -1
+
+# Fit the model
+res_pol89aSchaefBkfrac <- fit.spict(pol89aSchaefBkfrac)
+# Results 
+res_pol89aSchaefBkfrac
+
+# Summary of estimates
+round(sumspict.parest(res_pol89aSchaefBkfrac),2)
+
+# Reference points
+sumspict.drefpoints(res_pol89aSchaefBkfrac) 
+
+# Basic plotting of the results 
+plot(res_pol89aSchaefBkfrac)
+
+# Convergence checks
+
+# Convergence
+res_pol89aSchaefBkfrac$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_pol89aSchaefBkfrac$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_pol89aSchaefBkfrac <- calc.osa.resid(res_pol89aSchaefBkfrac)
+plotspict.diagnostic(res_pol89aSchaefBkfrac)
+```
+
+#### Retrospective: no trends and all runs inside the confidence intervals
+
+All runs converge and estimates are inside the confidence intervals.
+\
+Problem with last year?. Trend changed relative to previous runs.
+
+```{r message=FALSE, warning=FALSE}
+rep <- retro(res_pol89aSchaefBkfrac, nretroyear=5)
+plotspict.retro(rep)
+```
+
+#### Checking robustness to initial parameter values
+
+All runs converged. It seems that there are two optima (see $resmat). 18 runs with the same realistic estimates; but 12 converged models with unrealistic estimates.
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+check.ini(pol89aSchaefBkfrac, ntrials=30)
+```
+
+
+# Questions for Workshop - September2020:
+
+Run 5, that fixes n of productive curve (BMSY/K= 0.5) and uses priors for B1/K, converged well and the output estimates are realistic. However, the model is sensitive to initial values and the confidence intervals are quite wide.
+
+1. How the robustness can be improved?. To address the sensitivity to initial values.
+2. Acting (fixing, set priors) on alfa and/or beta could help to narrow the confidence intervals?
+
+
+
+

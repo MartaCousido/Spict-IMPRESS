@@ -1,0 +1,303 @@
+---
+title: "Octopus spict"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+### Run SPiCT model for Octopus vulgaris in the Galician coast
+
+```{r}
+
+library(tidyverse)
+library(spict)
+library(ellipse)
+
+xtab<-function (x,caption='Table X.',
+                file=stdout(),width='"100%"',
+                cornername='',
+                dec=rep(1,ncol(x))) {
+  nc<-ncol(x)
+  lin<-paste('<table width=',width,'>',sep='')
+  lin<-c(lin,sub('$','</td></tr>',
+                 sub('\\. |\\.$','.</b> ',
+                     sub('^',paste('<tr><td colspan=',nc+1,'><b>',sep=''),caption))))
+  hr<-paste('<tr><td colspan=',nc+1,'><hr noshade></td></tr>',sep='')
+  lin<-c(lin,hr)
+  cnames<-colnames(x)
+  cnames<-paste(sub('$','</b></td>',sub('^','<td align=right><b>',cnames)),collapse='\t')
+  lin<-c(lin,paste('<tr>',paste('<td align=left><b>',cornername,'</b></td>',sep=''),cnames,'</tr>'))
+  lin<-c(lin,hr)
+  rnames<-sub('$','</b></td>',sub('^','<tr> <td align=left><b>',rownames(x)))
+  #x<-sapply(1:ncol(x),function(i)sub('NA','  ',format(round(x[,i],dec[i]))))
+  x<-sapply(1:ncol(x),function (i) sub('NA','  ',
+                                       formatC(round(x[,i],dec[i]),digits=dec[i],format='f')))
+  for (i in 1:nrow(x)) {
+    thisline<-paste(rnames[i],paste(sub('$','</td>',
+                                        sub('^','<td align=right>',x[i,])),
+                                    collapse='\t'),'</tr>', sep='')
+    lin<-c(lin,thisline)
+  }
+  lin<-c(lin,hr)
+  lin<-c(lin,'</table><br>\n')
+  writeLines(lin,con=file)
+}
+
+```
+
+#1# Read data
+
+
+```{r}
+
+octopus<-read.table(file="/Users/jaimeoterovillar/Documents/IEO_work/IMPRESS/Spict-IMPRESS/Octopus/pulpo_catch_cpue.txt",header=T,dec=".",sep=",")
+
+head(octopus)
+
+
+octopus.8c<-filter(octopus,Zone_Ices=="Ices_8.c") # Data sets for Ices 8c
+octopus.9a<-filter(octopus,Zone_Ices=="Ices_9.a") # Data sets for Ices 9a
+
+```
+
+
+#2# SPiCT for 8c (North) -------------------------------------------------------
+
+#2.1# Set up data and check
+
+```{r}
+
+
+inp8c<-list(timeC = octopus.8c$FishingSeason,
+            obsC  = octopus.8c$Catches, # in Tons
+            obsI  = octopus.8c$Mean/1000, # Standardized biomass per 50 traps
+            timeI = octopus.8c$FishingSeason)
+
+inp8c<-check.inp(inp8c)
+inp8c$dtc
+
+```
+
+
+#2.2# Plot data
+
+```{r}
+
+# plotspict.data(inp8c) # simple plotting
+plotspict.ci(inp8c) # advanced plotting
+
+```
+
+
+#2.3# Fitting the model and get summaries
+
+```{r}
+
+res8c<-fit.spict(inp8c)
+
+names(res8c) # contents of the model
+
+capture.output(summary(res8c)) # model summary (all information)
+
+round(sumspict.parest(res8c),2) # model parameter estimates with 95% CI
+sumspict.drefpoints(res8c) # deterministic reference points (Drp)
+sumspict.srefpoints(res8c) # stochastic reference points (Srp)
+sumspict.states(res8c) # states with 95% CI for the last year of the series
+sumspict.predictions(res8c) # predictions with 95% CI for the next year
+
+```
+
+
+#2.4# Plotting results
+
+```{r}
+
+plot(res8c) # all plots together
+
+par(mfcol=c(2,3))
+plotspict.biomass(res8c,qlegend=F,ylim=c(0,4000)) # biomass plot
+plotspict.bbmsy(res8c,qlegend=F,ylim=c(0,3)) # relative biomass plot
+plotspict.f(res8c,qlegend=F,rel.axes=F,rel.ci=F) # fishing mortality plot
+plotspict.ffmsy(res8c,qlegend=F) # relative fishing mortality plot
+plotspict.catch(res8c,qlegend=F,ylim=c(0,2000)) # catch plot
+plotspict.fb(res8c)#,ylim=c(0.2,0.4),xlim=c(0,4000)) # kobe plot
+
+```
+
+
+#2.5# Model residuals and diagnostics
+
+```{r}
+
+res8c$opt$convergence # ok
+all(is.finite(res8c$sd)) # ok
+
+res8c.res<-calc.osa.resid(res8c) # get residuals
+
+plotspict.diagnostic(res8c.res) # plot residuals
+
+```
+
+
+#2.6# Get important quantities
+
+```{r}
+
+list.quantities(res8c) # all quantities from the model
+
+param.8c<-sumspict.parest(res8c)
+refpoints.det.8c<-sumspict.drefpoints(res8c)
+refpoints.stoch.8c<-sumspict.srefpoints(res8c)
+sate.8c<-sumspict.states(res8c)
+pred.8c<-sumspict.predictions(res8c)
+
+xtab(param.8c,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/Params8c.html",dec=rep(4,ncol(param.8c)))
+
+xtab(refpoints.det.8c,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/RefPointsDet8c.html",dec=rep(4,ncol(refpoints.det.8c)))
+
+xtab(refpoints.stoch.8c,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/RefPointsSto8c.html",dec=rep(4,ncol(refpoints.stoch.8c)))
+
+xtab(sate.8c,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/State8c.html",dec=rep(4,ncol(sate.8c)))
+
+xtab(pred.8c,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/Forecast8c.html",dec=rep(4,ncol(pred.8c)))
+
+```
+
+
+#2.7# Restrospective analysis
+
+```{r}
+
+ret.8c<-retro(res8c,nretroyear=3)
+
+plotspict.retro(ret.8c)
+
+```
+
+
+
+#3# SPiCT for 9a (South) -------------------------------------------------------
+
+#3.1# Set up data and check
+
+```{r}
+
+inp9a<-list(timeC = octopus.9a$FishingSeason,
+            obsC  = octopus.9a$Catches, # in Tons
+            obsI  = octopus.9a$Mean/1000, # in Tons
+            timeI = octopus.9a$FishingSeason)
+
+inp9a<-check.inp(inp9a)
+inp9a$dtc
+
+```
+
+
+#3.2# Plot data
+
+```{r}
+
+# plotspict.data(inp9a) # simple plotting
+plotspict.ci(inp9a) # advanced plotting
+
+```
+
+
+#3.3# Fitting the model and get summaries
+
+```{r}
+
+res9a<-fit.spict(inp9a)
+
+names(res9a) # contents of the model
+
+capture.output(summary(res9a)) # model summary (all information)
+
+round(sumspict.parest(res9a),2) # model parameter estimates with 95% CI
+sumspict.drefpoints(res9a) # deterministic reference points (Drp)
+sumspict.srefpoints(res9a) # stochastic reference points (Srp)
+sumspict.states(res9a) # states with 95% CI for the last year of the series
+sumspict.predictions(res9a) # predictions with 95% CI for the next year
+
+```
+
+
+#3.4# Plotting results
+
+```{r}
+
+plot(res9a) # all plots together
+
+par(mfcol=c(2,3))
+plotspict.biomass(res9a,qlegend=F,ylim=c(0,4000)) # biomass plot
+plotspict.bbmsy(res9a,qlegend=F,ylim=c(0,4)) # relative biomass plot
+plotspict.f(res9a,qlegend=F,rel.axes=F,rel.ci=F) # fishing mortality plot
+plotspict.ffmsy(res9a,qlegend=F) # relative fishing mortality plot
+plotspict.catch(res9a,qlegend=F,ylim=c(0,3000)) # catch plot
+plotspict.fb(res9a)#,ylim=c(0.2,0.4),xlim=c(0,4000)) # kobe plot
+
+```
+
+
+#3.5# Model residuals and diagnostics
+
+```{r}
+
+res9a$opt$convergence # ok
+all(is.finite(res9a$sd)) # ok
+
+res9a.res<-calc.osa.resid(res9a) # get residuals
+
+plotspict.diagnostic(res9a.res) # plot residuals
+
+```
+
+
+#3.6# Get important quantities
+
+```{r}
+
+list.quantities(res9a) # all quantities from the model
+
+param.9a<-sumspict.parest(res9a)
+refpoints.det.9a<-sumspict.drefpoints(res9a)
+refpoints.stoch.9a<-sumspict.srefpoints(res9a)
+sate.9a<-sumspict.states(res9a)
+pred.9a<-sumspict.predictions(res9a)
+
+xtab(param.9a,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/Params9a.html",dec=rep(4,ncol(param.9a)))
+
+xtab(refpoints.det.9a,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/RefPointsDet9a.html",dec=rep(4,ncol(refpoints.det.9a)))
+
+xtab(refpoints.stoch.9a,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/RefPointsSto9a.html",dec=rep(4,ncol(refpoints.stoch.9a)))
+
+xtab(sate.9a,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/State9a.html",dec=rep(4,ncol(sate.9a)))
+
+xtab(pred.9a,caption="Forecast",cornername="",
+     file="/Users/jaimeoterovillar/Desktop/Forecast9a.html",dec=rep(4,ncol(pred.9a)))
+
+```
+
+
+#3.7# Restrospective analysis
+
+```{r}
+
+ret.9a<-retro(res9a,nretroyear=3)
+
+plotspict.retro(ret.9a)
+
+```

@@ -1,0 +1,191 @@
+---
+title: "SPiCTing with Strait of Gibraltar blackspot seabream target fishery data (Spain and Morocco) - Exercise 2"
+author: "J. Gil"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data used
+A short time-series of species catch and biomass index (standardized Spanish CPUE) by quarter (2009-2018)
+
+##Loading required Packages
+```{r, eval=TRUE}
+require(spict)
+require(gdata)
+```
+
+##Required data for Ex.2
+Landings came from Spain and Morocco are in tons by quarter (2009-2018)
+Biomass index: standardized CPUE (k/h)from Spain VMS data by quarter (2009-2018) 
+```{r, eval=TRUE}
+dir()
+dat2 <- read.xls("sbr_quarterlydata.xls")
+```
+
+##"inp" for the SPiCT model. 
+```{r, eval=TRUE}
+inp3 <- list(timeC = dat2[,1],
+            obsC = dat2[,2],
+            timeI = dat2[,1]+0.125, 
+            obsI = dat2[,3])
+inp3 <- check.inp(inp3)
+```
+
+##Plotting data inputs
+```{r}
+plotspict.data(inp3)
+plotspict.ci(inp3) ##Advanced plots
+```
+
+##Fitting the model
+```{r}
+fit3 <- fit.spict(inp3)
+```
+
+##Summary
+```{r}
+capture.output(summary(fit3))
+```
+
+#Plotting outputs
+```{r}
+plot(fit3)
+```
+Really uncertain but converge...short data series :-(
+
+##Alternate model: fixing to Schaefer model
+```{r}
+inp4 <- inp3
+inp4$phases$logn <- -1
+inp4$ini$logn <- log(2)
+inp4$priors$logn <- c(0,0,0)
+
+fit4 <- fit.spict(inp4)
+
+plot(fit4)
+
+capture.output(summary(fit4))
+```
+
+Sometimes you required change the type of the reference point to deterministic, because there´s not biomass relative to Bmsy (NA) Figure 
+```{r}
+inp4$msytype <- "d"
+
+fit4 <- fit.spict(inp4)
+
+plot(fit4)
+
+capture.output(summary(fit4))
+```
+More better...less uncertain :-)
+
+# Checklist for the acceptance of a SPiCT assessment 
+
+- 1: Convergence 
+```{r}
+fit3$opt$convergence 
+fit4$opt$convergence 
+```
+Both models converge :-)
+
+- 2: All variance parameters are finite 
+```{r}
+all(is.finite(fit3$sd))  
+all(is.finite(fit4$sd))  
+```
+TRUE in both models :-)
+
+- 3: No violation of model assumptions 
+```{r}
+res3 <- calc.osa.resid(fit3)
+plotspict.diagnostic(res3)
+res4 <- calc.osa.resid(fit4)
+plotspict.diagnostic(res4)
+```
+Shapiro p-value significant value for Index in model 3 (normality of the residuals)!!
+Shapiro p-value significant value for catches  (normality of the residuals) and also 
+Bias p-value significant for Index in model 4 ( mean of the residuals is different from zero)!!
+
+- 4: Consistent patterns in the Retrospective Analysis
+```{r}
+rep3=retro(fit3, nretroyear=3) #quite short data series (3 years instead 5)
+plotspict.retro(rep3)
+rep4=retro(fit4, nretroyear=3) #quite short data series (3 years instead 5)
+plotspict.retro(rep4)
+```
+Quite weird, especially model 3 (with reference points not deterministic) :-(
+
+- 5. Realistic production curve
+```{r}
+calc.bmsyk(fit3)
+calc.bmsyk(fit4) # ALTERNATE Schaefer fix (0.5)
+```
+0.2783732 in model 3 :-(
+
+- 6. High assessment uncertainty can indicate a lack of contrast in the input data or violation of
+the ecological model assumptions
+```{r}
+calc.om(fit3)
+calc.om(fit4)
+```
+B/Bmsy and F/Fmsy confidence intervals with order magnitude >1 in model 3 :-( 
+B/Bmsy and F/Fmsy confidence intervals with order magnitude =0 in model 4 :-)
+
+- 7. Initial values do not influence the parameter estimates
+```{r}
+check.ini(inp3, ntrials=33)
+check.ini(inp4, ntrials=33)
+```
+All 33 trials converge in model 3 but distance in $resmat is  huge ina a couple of trials: 4224.10 and 10715.76!! :-(
+All 33 trials converge in model 4 and  distance in $resmat is 0 in all casews :-)
+
+# Extract values in TABLE format
+Preparing TABLE format
+```{r, include=FALSE}
+xtab<-function(x,caption='Table X.', file=stdout(), width='"100%"', cornername='', dec=rep(1,ncol(x))){
+  nc<-ncol(x)
+  lin<-paste('<table width=',width,'>', sep='')
+  lin<-c(lin,sub('$','</td></tr>',sub('\\. |\\.$','.</b> ',
+                                      sub('^', paste('<tr><td colspan=',nc+1,'><b>',sep=''), caption))))
+  hr<-paste('<tr><td colspan=',nc+1,'><hr noshade></td></tr>', sep='')
+  lin<-c(lin,hr)
+  cnames<-colnames(x)
+  cnames<-paste(sub('$','</b></td>',sub('^','<td align=right><b>',cnames)), collapse='\t')
+  lin<-c(lin,paste('<tr>',paste('<td align=left><b>',cornername,'</b></td>',sep=''),cnames,'</tr>'))
+  lin<-c(lin,hr)
+  rnames<-sub('$','</b></td>',sub('^','<tr> <td align=left><b>',rownames(x)))
+  #x<-sapply(1:ncol(x),function(i)sub('NA','  ',format(round(x[,i],dec[i]))))
+  x<-sapply(1:ncol(x),function(i)sub('NA','  ',formatC(round(x[,i],dec[i]),digits=dec[i], format='f')))
+  for(i in 1:nrow(x)){
+    thisline<-paste(rnames[i],paste(sub('$','</td>',sub('^','<td align=right>',x[i,])), collapse='\t'),'</tr>', sep='')
+    lin<-c(lin,thisline)
+  }
+  lin<-c(lin,hr)
+  lin<-c(lin,'</table><br>\n')
+  writeLines(lin,con=file)
+}
+```
+
+Then choose the model and its values can be extracted with these tables:
+```{r}
+Tab1 <- sumspict.parest(fit3); Tab1
+Tab2 <- sumspict.srefpoints(fit3);Tab2
+Tab3 <- sumspict.states(fit3);Tab3
+Tab4 <- sumspict.predictions(fit3);Tab4
+Tab1_Sfix <- sumspict.parest(fit4); Tab1_Sfix
+Tab2_Sfix <- sumspict.srefpoints(fit4);Tab2_Sfix
+Tab3_Sfix <- sumspict.states(fit4);Tab3_Sfix
+Tab4_Sfix <- sumspict.predictions(fit4);Tab4_Sfix
+```
+

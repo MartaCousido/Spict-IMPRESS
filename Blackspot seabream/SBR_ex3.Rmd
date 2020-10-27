@@ -1,0 +1,92 @@
+---
+title: "SPiCTing with Strait of Gibraltar blackspot seabream target fishery data (Spain and Morocco) - Exercise 3"
+author: "J. Gil"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data used
+Mixing data by year and quarters from Ex.1 and Ex.2
+
+##Loading required Packages
+```{r, eval=TRUE}
+require(spict)
+require(gdata)
+```
+
+##Required data for Ex.3
+Landings came from Spain and Morocco are in tons by year (1983-2008) and by quarter (2009-2018)
+Biomass index (2009-2018)  and nominal effort (nº sales, Spanish ones corrected from VMS data since 1997) 
+```{r, eval=TRUE}
+dir()
+dat3 <- read.xls("sbr_YandQ.xls")
+```
+
+##"inp" for the SPiCT model. 
+```{r, eval=TRUE}
+inp5 <- list(timeC = dat3[,1],
+            obsC = dat3[,2],
+            timeI = dat3[,1]+ 0.125,  
+            obsI = dat3[,3],
+            timeE = dat3[,1],  
+            obsE = dat3[,5])
+inp5 <- check.inp(inp5)
+```
+
+##Plotting data inputs
+```{r}
+plotspict.data(inp5)
+```
+
+##Fitting the model
+```{r}
+fit5 <- fit.spict(inp5)
+```
+
+##Summary
+```{r}
+capture.output(summary(fit5))
+```
+
+#Plotting outputs
+```{r}
+plot(fit5)
+```
+Sometimes you required change the type of the reference point to deterministic, because there´s not biomass relative to Bmsy (NA) Figure 
+```{r}
+inp5$msytype <- "d"
+
+fit5 <- fit.spict(inp5)
+
+plot(fit5)
+
+capture.output(summary(fit5))
+```
+Really weird...something wrong, can we mix year and quarter data series?
+
+##Alternate model: fixing to Schaefer model
+```{r}
+inp6 <- inp5
+inp6$phases$logn <- -1
+inp6$ini$logn <- log(2)
+inp6$priors$logn <- c(0,0,0)
+inp6$msytype <- "d"
+
+fit6 <- fit.spict(inp6)
+
+plot(fit6)
+
+capture.output(summary(fit6))
+```
+Again, really weird :-(

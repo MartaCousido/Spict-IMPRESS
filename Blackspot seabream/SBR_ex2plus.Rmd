@@ -1,0 +1,69 @@
+---
+title: "SPiCTing with Strait of Gibraltar blackspot seabream target fishery data (Spain and Morocco) - Exercise 2+"
+author: "J. Gil"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data used
+A short time-series of species catch and biomass index (standardized Spanish CPUE) by quarter (2009-2018) and including nominal effort
+
+##Loading required Packages
+```{r, eval=TRUE}
+require(spict)
+require(gdata)
+```
+
+##Required data for Ex.2
+Landings came from Spain and Morocco are in tons by quarter (2009-2018)
+Biomass index: standardized CPUE (k/h)from Spain VMS data by quarter (2009-2018) 
+```{r, eval=TRUE}
+dir()
+dat2plus <- read.xls("sbr_quarterlydata.xls")
+```
+
+##"inp" for the SPiCT model. 
+```{r, eval=TRUE}
+inp3plus <- list(timeC = dat2plus[,1],
+            obsC = dat2plus[,2],
+            timeI = dat2plus[,1]+ 0.125,  
+            obsI = dat2plus[,3],
+            timeE = dat2plus[,1],  
+            obsE = dat2plus[,5])
+inp3plus <- check.inp(inp3plus)
+```
+
+##Plotting data inputs
+```{r}
+plotspict.data(inp3plus)
+plotspict.ci(inp3plus) ##Advanced plots
+```
+Error in base.checks(inp$obsE, inp$timeE, inp$stdevfacE, "E") : Time and observation vector do not match in length for  E series (meaning?)
+
+##Fitting the model
+```{r}
+fit3plus <- fit.spict(inp3plus)
+```
+
+##Summary
+```{r}
+capture.output(summary(fit3plus))
+```
+
+#Plotting outputs
+```{r}
+plot(fit3plus)
+```
+Really uncertain but converge...short data series and seems like doesn´t get any improve including the effort :-(
+

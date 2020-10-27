@@ -1,0 +1,493 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+---
+ title: "SPiCT fit to Northern Hake data"
+ author: "Dorleta Garcia and Agurtzane Urtizberea"
+ date: "2020"
+output:
+ pdf_document:
+   toc: yes
+header-includes:
+  \usepackage{fancyhdr}
+---
+\addtolength{\headheight}{1.0cm} 
+\pagestyle{fancyplain}
+
+\renewcommand{\headrulewidth}{0pt} 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(results = "hide", echo = TRUE, warning = FALSE, tidy = TRUE)
+#knitr::opts_knit$set(root.dir = #"C:/Users/aurtizberea/Dropbox/flbeia/course/Tutorials/Conditioning/ConditioningOne")
+```
+
+
+# Background. 
+
+The aim is to try spict as assessment model for Northern hake in Division, analyse the goodness of fit under different model and data configuration and compare the results with the outputs of the actual assessment model ss3.
+
+## Main characteristics of the actual assessment model:
+
+  * It has 4 seasons
+  * Data begins in 1978.
+  * The exploitation is divided in 7 fleets, which account for gear and area. 
+  * Discards data is only available for some years and SS3 estimates them. 
+  * Landings are also estimated but as the accuracy given is high the difference between estimated and observed landings is low.
+  * 4 abundance indices, from scientific surveys, are used:
+    + RESGASQ: It is a recruitment survey with observations in the 4 seasons from 1987 to 1997 and with only 2 from 1998 to 2001.
+    + EVHOE: It is a recruitment survey that covers a big area (2001-2016, 2018-2019). 
+    + IR-IGFS: It is a recruitment survey that covers the Irish coast (2003-2019). 
+    + PORCUPINE: It targets big individuals (2001-2019).
+    
+    The porcupine survey has shown to follow the EVHOE and IR-IGFS trends but with 2 year lag. To overcome the problem of representativeness of the recruitment surveys for the exploitation biomass we can apply the lag to the observations. 
+  
+ 
+```{r, eval=FALSE}
+library(devtools)
+install_github("DTUAqua/spict/spict") 
+
+
+```
+
+Load all necessary packages.
+```{r, pkgs, results = "hide",echo=TRUE,message=FALSE}
+library(spict)
+load( 'C:/use/Proyectos/MEVA/HKE/Spict-IMPRESS/nhke/data/data_nhke.RData')
+
+evhoe     <- subset(bioInd, FltSvy == 8)$value
+resgasc   <- subset(bioInd, FltSvy %in% 9:12)$value
+porcupine <- subset(bioInd, FltSvy %in% 13)$value
+irigfs    <- subset(bioInd, FltSvy %in% 14)$value
+
+```
+
+
+# Input data
+
+
+## Seasonal data with observed catches.
+ Generate the seasonal data, we assign the mid season to the catch data and the start of the season to the abundance indices.
+ 
+```{r echo=TRUE, eval=TRUE}
+year <- rep(1978:2019,each = 4) + rep(seq(0,1, length = 5)[-5], 42)
+timeevhoe        <- c(1997:2016, 2018:2019) + 0.75
+timeporcupine    <- 2001:2019 + 0.5
+timeirigfs       <- 2003:2019 + 0.75
+timeresgasc      <- c(rep(1985:1997,each = 4) +  rep(seq(0,1, length = 5)[-5], 13), rep(1998:2001,each = 2) +  rep(c(0.25, 0.75), 4))
+
+
+dtc=1
+dteuler=1/16
+inp.hke <- list(obsC=catch.seas$tons,timeC=year,
+                obsI=list(evhoe, porcupine, irigfs, resgasc),
+                timeI=list(timeevhoe, timeporcupine, timeirigfs, timeresgasc),
+                dtc=dtc,dteuler=dteuler, nseasons = 4, seasontype = 2)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp, qlegend = TRUE)
+
+inp.ss <- inp
+```
+
+
+## Annual data with observed:
+
+
+```{r echo=TRUE, eval=TRUE}
+year <- 1978:2019
+
+resg1 <- subset(bioInd, FltSvy %in% 9)$value
+resg2 <- subset(bioInd, FltSvy %in% 10)$value
+resg3 <- subset(bioInd, FltSvy %in% 11)$value
+resg4 <- subset(bioInd, FltSvy %in% 12)$value
+
+timeresg1 <- 1985:1997
+timeresg2 <- 1985:2001 + 0.25
+timeresg3 <- 1985:1997 + 0.5
+timeresg4 <- 1985:2001 + 0.75
+ 
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons,timeC=year,
+                obsI=list(evhoe, porcupine, irigfs, resg1, resg2, resg3, resg4),
+                timeI=list(timeevhoe, timeporcupine, timeirigfs, timeresg1, timeresg2, timeresg3, timeresg4),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.yr <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.yr, qlegend = TRUE)
+```
+
+Annual data with time lag
+
+```{r echo=TRUE, eval=TRUE}
+year <- 1978:2019
+
+resg1 <- subset(bioInd, FltSvy %in% 9)$value
+resg2 <- subset(bioInd, FltSvy %in% 10)$value
+resg3 <- subset(bioInd, FltSvy %in% 11)$value
+resg4 <- subset(bioInd, FltSvy %in% 12)$value
+
+timeresg1.lag <- 1985:1997 + 2
+timeresg2.lag <- 1985:2001 + 0.25 + 2
+timeresg3.lag <- 1985:1997 + 0.5  + 2
+timeresg4.lag <- 1985:2001 + 0.75 + 2
+ 
+evhoe.lag     <- evhoe[1:(length(evhoe)-2)]
+irigfs.lag    <- irigfs[1:(length(irigfs)-2)]
+
+timeevhoe.lag        <- c(1999:2018) + 0.75
+timeirigfs.lag       <- 2005:2019 + 0.75
+
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons,timeC=year,
+                obsI=list(evhoe.lag, porcupine, irigfs.lag, resg1, resg2, resg3, resg4),
+                timeI=list(timeevhoe.lag, timeporcupine, timeirigfs.lag, timeresg1.lag, timeresg2.lag, timeresg3.lag, timeresg4.lag),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.yr.lag <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.yr.lag, qlegend = TRUE)
+```
+
+Annual data only with porcupine
+
+```{r echo=TRUE, eval=TRUE}
+
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons,timeC=year,
+                obsI=list(porcupine),
+                timeI=list(timeporcupine),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.yr.porc <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.yr.porc, qlegend = TRUE)
+```
+
+
+# Model Fit
+
+## Annual model
+Fit the model to annual data with the default settings and analyse the results. The model converges in absolute terms but in relative convergence we get (4) ( I don't know what it means)). The uncertainty obtained is huge and the values obtained for biomass, both absolute and relative, are not credible.
+
+Things that need to be explored:
++ Add the two year time lag to the recruitment abudance indices (res.yr.lag).
++ Shorten the catch time series to 1987 (the first year with abundance index).
++ Tighter Schaefer prior for log n. 
++ Shorthen the catch time series to 2001 and use only Porcupine index.
+
+
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+res.yr <- fit.spict(inp.yr)
+
+
+summary(res.yr)
+
+resid.yr <- calc.osa.resid(res.yr)
+
+plot(res.yr)
+#plotspict.osar(rep)
+
+
+# Plot the residual diagnostics
+plotspict.diagnostic(resid.yr)
+```
+
+
+## Annual model adding two year time lag.
+The addition of the year lag does not solve the problem, the absolute numbers change but the broad picture is the same. 
+
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+
+res.yr.lag <- fit.spict(inp.yr.lag)
+
+summary(res.yr.lag)
+
+resid.yr.lag <- calc.osa.resid(res.yr.lag)
+
+plot(res.yr.lag)
+#plotspict.osar(rep)
+```
+
+
+## Annual model adding two year time lag and shorter catch time series
+Shortening the time series reduces slightly the uncertainty but still very high. 
+
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons[-(1:9)],timeC=1987:2019,
+                obsI=list(evhoe.lag, porcupine, irigfs.lag, resg1, resg2, resg3, resg4),
+                timeI=list(timeevhoe.lag, timeporcupine, timeirigfs.lag, timeresg1.lag, timeresg2.lag, timeresg3.lag, timeresg4.lag),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.yr.lag.short <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.yr.lag.short, qlegend = TRUE)
+
+res.yr.lag.short <- fit.spict(inp.yr.lag.short)
+
+summary(res.yr.lag.short)
+
+resid.yr.lag.short <- calc.osa.resid(res.yr.lag.short)
+
+plot(res.yr.lag.short)
+#plotspict.osar(rep)
+```
+
+
+
+## Use only porcupine
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+# Add the two year time lag.
+
+
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons[-(1:23)],timeC=2001:2019,
+                obsI=list(porcupine),
+                timeI=list(timeporcupine),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.porc <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.porc, qlegend = TRUE)
+
+res.porc <- fit.spict(inp.porc)
+
+summary(res.porc)
+
+resid.porc <- calc.osa.resid(res.porc)
+
+plot(res.porc)
+
+#plotspict.osar(rep)
+```
+
+## Prior for the schaefer model.
+With the shorter data time series and lagged data fit the model. 
+
+The uncertainty reduces considerably but the median values are still not credible. According to the results the stock has been overexploited in the whole historical period, even if the biomass has recover considerably in recent years. Independently of actual assessment results, all the data available indicates that  from 2010 to 2016, the stock was in very good status. According to this results, in those years the productivity was high, but the biomass level was below safe biological limits, the catch represent all the annual production?
+
+The residuals look ok.
+
+Here we run the whole diagnostics. The model is sensitive to the initial values and in 4 out of 30 iterations did not conveerged. Not sure about what is a bad value for distance byt it some cases it looks high.
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.yr$tons[-(1:23)],timeC=2001:2019,
+                obsI=list(porcupine),
+                timeI=list(timeporcupine),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.hke$priors$logn <- c(log(2), 0.5,1)
+inp.yr.sch <- check.inp(inp.hke)
+
+
+res.yr.sch<- fit.spict(inp.yr.sch)
+
+summary(res.yr.sch)
+
+resid.yr.sch <- calc.osa.resid(res.yr.sch)
+
+plot(res.yr.sch)
+#plotspict.osar(rep)
+
+
+# Plot the residual diagnostics
+plotspict.diagnostic(resid.yr.sch)
+
+
+# Check the sensitivity to initial parameter values
+sens.ini <- check.ini(res.yr.sch, ntrials = 30)
+
+# Make a retrospective analysis and plot the results
+res.yr.sch$inp$getReportCovariance = FALSE
+res.yr.sch <- retro(res.yr.sch, nretroyear = 4)
+plotspict.retro(res.yr.sch)
+
+
+# Plot the relative biomass and fishing mortality
+par(mfrow = c(2, 1), mar = c(4, 4, 1, 1))
+plotspict.bbmsy(res.yr.sch, qlegend = FALSE, stamp = "")
+plotspict.ffmsy(res.yr.sch, qlegend = FALSE, stamp = "")
+
+# Check if there are changes in the results if the grid is finer, i.e.
+# dteuler is smaller than 1/16 year.
+inp.dteuler1_32 <- inp.hke
+inp.dteuler1_32$dteuler <- 1/32
+inp.dteuler1_32 <- check.inp(inp.dteuler1_32)
+
+fit.dteuler1_32 <- fit.spict(inp.dteuler1_32)
+
+## Fit the discrete time model
+inp.dteuler1 <- inp.hke
+inp.dteuler1$dteuler <- 1
+inp.dteuler1 <- check.inp(inp.dteuler1)
+
+fit.dteuler1 <- fit.spict(inp.dteuler1)
+
+# Checked the fixed effects estimates
+(par <- exp(res.yr$par.fixed))
+(par1 <- exp(fit.dteuler1$par.fixed))
+(par1_32 <- exp(fit.dteuler1_32$par.fixed))
+
+# Plot the percent change compared to the default run
+dif1_32 <- (par - par1_32) / par * 100
+dif1 <- (par - par1) / par * 100
+plot(dif1, ylab = "Percent difference", xlab = "", axes = FALSE, ylim = c(-40,40))
+points(dif1_32, pch = 3)
+abline(h=0, col = "#00000044")
+axis(1, at=seq(par), labels = gsub("log", "", names(par)))
+axis(2, at = seq(-30, 30, 20))
+legend("topleft", legend = c("Discrete", "Finer grid"), pch = c(1,3))
+
+# Plot the results using the two dteuler together
+par(mfrow = c(2,3))
+plotspict.bbmsy(res.yr, qlegend = FALSE, main = "")
+title("Default: dteuler = 1/16 year")
+plotspict.bbmsy(fit.dteuler1_32, qlegend = FALSE, main = "")
+title("Finer grid: dteuler = 1/32 year")
+plotspict.bbmsy(fit.dteuler1, qlegend = FALSE, main = "")
+title("Discrete time: dteuler = 1 year")
+plotspict.ffmsy(res.yr)
+plotspict.ffmsy(fit.dteuler1_32)
+plotspict.ffmsy(fit.dteuler1)
+
+```
+
+
+## Using seasonal data
+
+Using the whole time series the model does not converge. 
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+
+res.ss <- fit.spict(inp.ss)
+
+summary(res.ss)
+
+# Model does not converge so residuals cannot be calculated
+#res.ss <- calc.osa.resid(res.ss)
+
+plot(res.ss)
+```
+
+
+Use two year time lag, shorten the data time series and fix schaefer. 
+
+```{r echo=TRUE, eval=TRUE, results='hide', message=FALSE, warning=FALSE}  
+
+dtc=1
+dteuler=1/16
+
+inp.hke <- list(obsC=catch.seas$tons[-(1:36)],timeC= rep(1987:2019, each = 4) + rep(seq(0,1, length = 5)[-5], 33),
+                obsI=list(evhoe.lag, porcupine, irigfs.lag, resg1, resg2, resg3, resg4),
+                timeI=list(timeevhoe.lag, timeporcupine, timeirigfs.lag, timeresg1.lag, timeresg2.lag, timeresg3.lag, timeresg4.lag),
+                dtc=dtc,dteuler=dteuler)
+inp.hke$phases$logbeta <- 1
+inp.hke$phases$logalpha <- 1
+inp.hke$priors$logn <- c(log(2), 0.5,1)
+inp.ss.sch <- check.inp(inp.hke)
+#' Plot the input data
+plotspict.data(inp.ss.sch, qlegend = TRUE)
+
+res.ss.sch <- fit.spict(inp.ss.sch)
+
+summary(res.ss.sch)
+
+resid.ss.sch <- calc.osa.resid(res.ss.sch)
+
+plot(res.ss.sch)
+
+
+#plotspict.osar(rep)
+
+
+# Plot the residual diagnostics
+plotspict.diagnostic(res.ss.sch)
+
+
+# Check the sensitivity to initial parameter values
+sens.ini <- check.ini(res.ss.sch, ntrials = 30)
+
+# Make a retrospective analysis and plot the results
+res.ss.sch$inp$getReportCovariance = FALSE
+res.ss.sch <- retro(res.ss.sch, nretroyear = 4)
+plotspict.retro(res.ss.sch)
+
+
+# Plot the relative biomass and fishing mortality
+par(mfrow = c(2, 1), mar = c(4, 4, 1, 1))
+plotspict.bbmsy(res.ss.sch, qlegend = FALSE, stamp = "")
+plotspict.ffmsy(res.ss.sch, qlegend = FALSE, stamp = "")
+
+# Check if there are changes in the results if the grid is finer, i.e.
+# dteuler is smaller than 1/16 year.
+inp.dteuler1_32 <- inp.hke
+inp.dteuler1_32$dteuler <- 1/32
+inp.dteuler1_32 <- check.inp(inp.dteuler1_32)
+
+fit.dteuler1_32 <- fit.spict(inp.dteuler1_32)
+
+## Fit the discrete time model
+inp.dteuler1 <- inp.hke
+inp.dteuler1$dteuler <- 1
+inp.dteuler1 <- check.inp(inp.dteuler1)
+
+fit.dteuler1 <- fit.spict(inp.dteuler1)
+
+# Checked the fixed effects estimates
+(par <- exp(res.ss.sch$par.fixed))
+(par1 <- exp(fit.dteuler1$par.fixed))
+(par1_32 <- exp(fit.dteuler1_32$par.fixed))
+
+# Plot the percent change compared to the default run
+dif1_32 <- (par - par1_32) / par * 100
+dif1 <- (par - par1) / par * 100
+plot(dif1, ylab = "Percent difference", xlab = "", axes = FALSE, ylim = c(-40,40))
+points(dif1_32, pch = 3)
+abline(h=0, col = "#00000044")
+axis(1, at=seq(par), labels = gsub("log", "", names(par)))
+axis(2, at = seq(-30, 30, 20))
+legend("topleft", legend = c("Discrete", "Finer grid"), pch = c(1,3))
+
+# Plot the results using the two dteuler together
+par(mfrow = c(2,3))
+plotspict.bbmsy(res.ss.sch, qlegend = FALSE, main = "")
+title("Default: dteuler = 1/16 year")
+plotspict.bbmsy(fit.dteuler1_32, qlegend = FALSE, main = "")
+title("Finer grid: dteuler = 1/32 year")
+plotspict.bbmsy(fit.dteuler1, qlegend = FALSE, main = "")
+title("Discrete time: dteuler = 1 year")
+plotspict.ffmsy(res.ss.sch)
+plotspict.ffmsy(fit.dteuler1_32)
+plotspict.ffmsy(fit.dteuler1)
+```
+

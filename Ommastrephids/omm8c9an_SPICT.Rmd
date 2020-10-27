@@ -1,0 +1,305 @@
+---
+title: "Ommastrephids (Illex coindetii and Todaropsis eblanae) in ICES divisions 8c9aN"
+author: "Julio Valeiras/Esther Abad"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=80), tidy=TRUE)
+```
+
+## Background information
+
+
+The shortfin squids, Illex coindetii and Todaropsis eblanae, are common benthopelagic species in soft-bottom fishing grounds in north Iberian peninsula. 
+They are mostly caught in bottom trawlers as a secondary species. Its commercial importance is significant although is they are also discard species by trawlers in the area. 
+There is not a defined stock unit either a management advise by ICES. In this exercise we choose the same ICES divisions (8c9a) of other assessed stocks in the area that are caught by the same fleets.
+
+
+## Available data 
+
+1. Annual commercial landings (in tonnes) div 8c9aN: 2000-2019. 
+2. Abundance Index  "Spanish groundfish Research Survey, operating in div 8c9aN, September/October" (kg/hauls): 2000-2019.
+3. Abundance Index  "Coruna (Spanish fishing port) bottom trawlers > 55 mm, operating in div 8c" (tonnes/fishing sequence): 2009-2019.
+
+## Fitting SPICT model
+
+### Starting session and download libraries 
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Package from github:
+  #devtools::install_github("mawp/spict/spict")
+  #library(remotes)
+  #install_github("DTUAqua/spict/spict") 
+
+rm(list=ls(all=TRUE))
+
+# Download libraries
+library(spict)
+library(icesAdvice)
+library(ellipse)
+library(formatR)
+```
+
+### Creating data object
+
+```{r results='hide', message=FALSE, warning=FALSE}
+
+# Catch data: Only Commercial Landings. (No discards)
+
+omm8c9aNC <- data.frame(obsC = c(1130,799,641,751,890,565,224,206,355,298,1291,2146,7682,7913,2565,939,2232,1299,1194,685),timeC = 2000:2019)
+
+# Index data: Demersales Research Survey (kg/fishing hauls)
+omm8c9aND <- data.frame(obsD = c(5.72,1.56,1.2,2.6,2.9,3.82,0.96,1.26,2.34,2.14,1.6,5.34,3.58,2.14,4.34,5.64,23.7,6.38,12.74,8.38),timeD = c(2000:2019)+0.75)
+
+# Index data: Commercial index bottom trawlers (tonnes/fishing sequence)
+omm8c9aNI <- data.frame(obsI = c(4.05,13.26,18.76,42.76,45.65,34.07,17.98,50.92,32.06,23.37,10),timeI = 2009:2019)
+
+# Create a list for input data
+
+omm8c9aN <- list(timeC = omm8c9aNC$timeC, obsC = omm8c9aNC$obsC)
+omm8c9aN$timeI <- list(omm8c9aND$timeD, omm8c9aNI$timeI)
+omm8c9aN$obsI <- list()
+omm8c9aN$obsI[[1]] <- omm8c9aND$obsD/1000 # Index 1
+omm8c9aN$obsI[[2]] <- omm8c9aNI$obsI # Index 2
+
+# Check list 
+omm8c9aN = check.inp(omm8c9aN)
+```
+
+Plot Raw data:
+
+```{r Figure1, message=FALSE, warning=FALSE, fig.cap = "Raw data ", fig.align = "center"}
+plotspict.data(omm8c9aN)
+```
+
+To highlight:
+
+- Catch and commercial abundance series (Index 2) are overlapped only for a short period of time (10 years).
+
+
+Plot Fitting linear regression:
+```{r Figure2, message=FALSE, warning=FALSE, fig.cap = "Fitting linear regression", fig.align = "center"}
+plotspict.ci(omm8c9aN)
+```
+
+
+### Model Fitting 
+
+#### Run 1. 
+
+- Default priors and all parameters estimated
+
+ Converged.
+ 
+```{r Figure3, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+
+# Fit the model
+res_omm8c9aNDefault <- fit.spict(omm8c9aN)
+
+# Results 
+res_omm8c9aNDefault
+
+# Summary of estimates
+round(sumspict.parest(res_omm8c9aNDefault),2)
+
+# Reference points
+sumspict.drefpoints(res_omm8c9aNDefault) 
+
+# Basic plotting of the results 
+plot(res_omm8c9aNDefault)
+
+# Convergence checks
+
+# Convergence
+res_omm8c9aNDefault$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_omm8c9aNDefault$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_omm8c9aNDefault <- calc.osa.resid(res_omm8c9aNDefault)
+plotspict.diagnostic(res_omm8c9aNDefault)
+
+# Retrospective: no trends and all runs inside the confidence intervals
+```
+
+Problems of convergence.
+
+```{r message=FALSE, warning=FALSE}
+rep <- retro(res_omm8c9aNDefault, nretroyear=5)
+
+```
+
+#### Run 2. 
+
+- Fixing n to resemble the Schaefer production model
+
+Converged.
+
+```{r Figure4, message=FALSE, warning=FALSE}
+
+omm8c9aNSchaefer <- omm8c9aN
+omm8c9aNSchaefer$ini$logn <- log(2)
+omm8c9aNSchaefer$phases$logn <- -1
+
+res_omm8c9aNSchaefer <- fit.spict(omm8c9aNSchaefer)
+res_omm8c9aNSchaefer 
+
+# Summary of estimates
+round(sumspict.parest(res_omm8c9aNSchaefer),2)
+
+# Reference points
+sumspict.drefpoints(res_omm8c9aNSchaefer) 
+
+# Basic plotting of the results 
+plot(res_omm8c9aNSchaefer)
+
+# Convergence checks
+
+# Convergence
+res_omm8c9aNSchaefer$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_omm8c9aNSchaefer$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_omm8c9aNSchaefer <- calc.osa.resid(res_omm8c9aNSchaefer)
+plotspict.diagnostic(res_omm8c9aNSchaefer)
+
+# Retrospective: no trends and all runs inside the confidence intervals:
+```
+
+All runs converged.
+
+```{r message=FALSE, warning=FALSE}
+rep<-retro(res_omm8c9aNSchaefer, nretroyear=5)
+plotspict.retro(rep)
+
+# Checking robustness to initial parameter values
+```
+
+Not all runs converged. 
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+check.ini(omm8c9aNSchaefer, ntrials=30)
+```
+
+
+#### Run 3. 
+
+- Set priors for the ratio between biomass in the initial year relative to K, mean of log(0.5) and sd of 0.2
+
+Converged.
+
+```{r Figure5, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+
+omm8c9aNBkfrac <- omm8c9aN
+omm8c9aNBkfrac$priors$logbkfrac <- c(log(0.5),0.2,1)
+
+res_omm8c9aNBkfrac <- fit.spict(omm8c9aNBkfrac)
+res_omm8c9aNBkfrac
+
+# Summary of estimates
+round(sumspict.parest(res_omm8c9aNBkfrac),2)
+
+# Reference points
+sumspict.drefpoints(res_omm8c9aNBkfrac) 
+
+# Basic plotting of the results 
+plot(res_omm8c9aNBkfrac)
+
+# Convergence checks
+
+# Convergence
+res_omm8c9aNBkfrac$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_omm8c9aNBkfrac$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_omm8c9aNBkfrac <- calc.osa.resid(res_omm8c9aNBkfrac)
+plotspict.diagnostic(res_omm8c9aNBkfrac)
+
+# Retrospective: no trends and all runs inside the confidence intervals
+```
+
+Problems of convergence.
+
+```{r message=FALSE, warning=FALSE}
+rep <- retro(res_omm8c9aNBkfrac, nretroyear=5)
+
+```
+
+
+#### Run 4:
+
+- Fix parameter to Scahaeffer production curve (initial parameter) and numerical solver time step 
+
+Converged.
+
+```{r message=FALSE, warning=FALSE}
+
+omm8c9aNfns <- omm8c9aN
+omm8c9aNfns$ini$logsdb <- log(0.1)
+omm8c9aNfns$phases$logn=-1
+
+# Fit the model
+res_omm8c9aNfns <- fit.spict(omm8c9aNfns)
+# Results 
+res_omm8c9aNfns
+
+# Summary of estimates
+round(sumspict.parest(res_omm8c9aNfns),2)
+
+# Reference points
+sumspict.drefpoints(res_omm8c9aNfns) 
+
+# Basic plotting of the results 
+plot(res_omm8c9aNfns)
+
+# Convergence checks
+
+# Convergence
+res_omm8c9aNfns$opt$convergence 
+
+# All the sd were estimated
+all(is.finite(res_omm8c9aNfns$sd))
+
+# No violation of assumptions: bias, correlation and normality:
+res_omm8c9aNfns <- calc.osa.resid(res_omm8c9aNfns)
+plotspict.diagnostic(res_omm8c9aNfns)
+
+# Retrospective: no trends and all runs inside the confidence intervals
+```
+
+All runs converged.
+
+```{r message=FALSE, warning=FALSE}
+rep <- retro(res_omm8c9aNfns, nretroyear=5)
+plotspict.retro(rep)
+
+# Checking robustness to initial parameter values
+```
+
+Not all runs converged. 
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+check.ini(omm8c9aNfns, ntrials=30)
+```
+
+# Questions/doubts
+
+Run 2 and 4 converged but the model is sensitive to initial values and the confidence intervals are quite wide.
+
+They are not target species and the commercial effort is not focused on them. Although in the last years, there have been some fishing trips targeting these species when abundance is high. 
+
+Abundance index from research survey can show not only the exploitable biomass. 
+
+
+

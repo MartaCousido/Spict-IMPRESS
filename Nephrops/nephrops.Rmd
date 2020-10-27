@@ -1,0 +1,189 @@
+---
+title: "Searching FU 25 Nephrops stock Reference Points with SPiCT"
+author: "I.G.Herraiz"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+
+## Back-ground
+FU 25 Nephrops stock catches and CPUE have been countinously decreasing since the beginning of the data time series in 1975. ICES has been recommending "Reduce catches to zero" since 2002. 2011 catches were the 6% of the 1975 catches. The introduction of individual quotas by vessel in 2012 derived in a misreporting in catch anc CPUE data around 77%. Finally the zero TAC was established and is in force since then until at least 2022. Since 2017 there is a special quota of 2 t for a Nephrops Sentinel fishery.         
+
+## SPICT data needed
+Data requested are: 
+
+- A representative time-series of species catch: 1975-2019 annual catch time series in tonnes is available. After many trials, 1975-1982 data were rejected for the sake of convergence. 2012-2019 data were rejected due to the high misreporting. Therefore the time series finally used covers 1983-2011. Catches by quarter are not already available.  
+
+- A representative time-series of species biomass: The times series selected is the index in kg by 30 minutes haul of the bottom trawl Spanish scientific survey "Demersales" 1983-2019. The survey is conducted each year in October. It is not a survey designed for Nephrops but is considered suitable. Other indices as the CPUE of the fleet of Coruna port have the above-mentioned problem of misreporting and also in the SPiCT outputs provides unreasonably high biomasses. The sentinel fishery index only has 3 years data and does not represent the whole functional unit.  
+
+## SPICT Assumptions
+- Catch data should be representative of both landings and bycatch: oK for 1975-2011.  
+- Stock size indices should be representative of the explotaible stock biomass (ESB): The survey catches more small individuals than the commercial fishery but the difference in the size modes among the survey and the commercial fishery is 3 mm (32 mm carapace length vs. 35), that in the case of Nephrops, does not represent even different ages. 
+
+## Installing and loading the libraries
+
+```{r}
+library(spict)
+library(icesAdvice)
+```
+
+## Check data
+
+```{r}
+data <- read.csv("25.csv" ,sep=",")
+head(data)
+summary(data)
+str(data)
+
+```
+## Create the inp object for the model
+
+```{r}
+inp <- list(timeC=data$Year, obsC=data$C_t,
+             obsI=list(data$DEM_kg.lance),
+             timeI=list(data$Year+0.83))
+inp=check.inp(inp)
+inp$dtc
+
+```
+
+## Plotting data
+
+
+```{r}
+plotspict.data(inp)
+```
+
+## Advanced data plotting
+
+
+```{r}
+plotspict.ci(inp)
+```
+
+
+## Fitting the model
+
+
+```{r}
+inp$dteuler=1/16
+res <- fit.spict(inp)
+```
+
+## Results
+
+```{r}
+names(res)
+capture.output(summary(res))
+round(sumspict.parest(res),2)
+```
+
+## Reference points
+
+```{r}
+sumspict.drefpoints(res)
+sumspict.srefpoints(res)
+```
+
+
+## Interpreting plots of results
+
+```{r}
+plot(res)
+```
+
+## Checklist for the acceptance of a SPiCT assessment 
+- 1: Convergence of the model fit, which has code 0 if the fit was succesful. If this is not the case convergence was not obtained and reported results should not be used.
+
+```{r}
+res$opt$convergence 
+```
+- 2: All variance parameters of the model parameters are finite should be TRUE
+
+```{r}
+all(is.finite(res$sd))  
+```
+- 3: No violation of model assumptions based on one-step-ahead residuals (bias, auto-correlation, normality).This means, that p-values are insignificant (??? 0.05), indicated by green titles in the graphs of spictplot.diagnostics(fit). Slight violations of these assumptions do not necessarily invalidate model results.
+```{r}
+res <- calc.osa.resid(res)
+plotspict.diagnostic(res)
+
+```
+
+
+- 4: Consistent patterns in the retrospective analysis. This means that there is no tendency of consistent under- or overestimation of the relative fishing mortality F and relative biomass B in successive assessment. The retrospective trajectories of those two quantities should be inside 
+the confidence intervals of the base run. (fit <- fit.retro(fit))
+
+```{r}
+rep=retro(res, nretroyear=5)
+plotspict.retro(rep)
+```
+
+- 5. Realistic production curve. The shape of the production curve should not be too skewed. 
+BMSY/K should be between 0.1 and 0.9 Low values of BMSY/K allow for an infinite population growth rate K.  
+
+```{r}
+calc.bmsyk(res)
+
+```
+
+- 6. It is prudent to check that the same parameter estimates are obtained if using different initial values. If the optimum of the objective function is poorly defined, i.e. possibly containing multiple optima, it is possible that different parameter estimates will be returned depending on the initial values. To check whether this is the case run
+
+```{r}
+fit <- check.ini(res)
+res$ckeck.ini$resmat
+```
+
+- 7. High assessment uncertainty can indicate a lack of contrast in the input data or violation of
+the ecological model assumptions. The main variance parameters (logsdb, logsdc, logsdi, logsdf)
+should not be unrealistically high. Confidence intervals for B and F should not span more
+than 1 order of magnitude 
+```{r}
+calc.om(fit)
+```
+
+## For extracting an estimated quantity
+
+```{r}
+get.par('logBmsy', res)
+```
+
+
+## From log to natural scale
+```{r}
+get.par('logBmsy', res, exp=TRUE)
+```
+
+## list
+```{r}
+list.quantities(res)
+```
+
+## The covariance between the model parameters (fixed effects) can be extracted from the results list
+```{r}
+res$cov.fixed
+```
+
+## Correlation
+```{r}
+cov2cor(res$cov.fixed)
+cov2cor(get.cov(res, 'logBmsy', 'logFmsy'))
+```
+## Plots
+
+```{r}
+
+plotspict.biomass(res)
+plotspict.bbmsy(res)
+plotspict.f(res)
+plotspict.ffmsy(res)
+plotspict.catch(res)
+plotspict.fb(res)
+```
